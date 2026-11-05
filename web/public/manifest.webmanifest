@@ -1,0 +1,9 @@
+{
+  "name": "Offline PRs",
+  "short_name": "Offline PRs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2328",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

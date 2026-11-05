@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src/server/**/*.ts", "src/shared/**/*.ts", "test/**/*.ts"]
+}
