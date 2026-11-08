@@ -1,5 +1,4 @@
 import {
-  CloudOfflineIcon,
   CodeIcon,
   GearIcon,
   GitPullRequestIcon,
@@ -93,8 +92,8 @@ export function AppHeader() {
             </ActionList>
           </ActionMenu.Overlay>
         </ActionMenu>
-        <Link to="/" className="gh-mark" title="Offline PRs" aria-label="Offline PRs home">
-          <CloudOfflineIcon size={28} />
+        <Link to="/" className="gh-mark" title="gitOff" aria-label="gitOff home">
+          <img src="/favicon.svg" width={28} height={28} alt="" style={{ display: 'block' }} />
         </Link>
         <nav className="gh-crumbs" aria-label="Breadcrumb">
           {repo ? (
@@ -110,7 +109,7 @@ export function AppHeader() {
             </>
           ) : (
             <Link to="/">
-              <b>Offline PRs</b>
+              <b>gitOff</b>
             </Link>
           )}
         </nav>

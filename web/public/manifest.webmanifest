@@ -1,6 +1,6 @@
 {
-  "name": "Offline PRs",
-  "short_name": "Offline PRs",
+  "name": "gitOff",
+  "short_name": "gitOff",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

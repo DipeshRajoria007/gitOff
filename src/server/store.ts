@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,8 +13,23 @@ import type {
 } from '../shared/types.js';
 import { KeyedMutex, expandHome, readJson, splitKey, writeJson } from './util.js';
 
-export const HOME = process.env.OGH_HOME ? expandHome(process.env.OGH_HOME) : path.join(os.homedir(), '.offline-github');
-export const DEFAULT_PORT = Number(process.env.OGH_PORT || 4777);
+/** Data folder: $GITOFF_HOME, else ~/.gitoff. Installs from before the rename keep using ~/.offline-github. */
+function dataHome(): string {
+  const env = process.env.GITOFF_HOME || process.env.OGH_HOME;
+  if (env) return expandHome(env);
+  const legacy = path.join(os.homedir(), '.offline-github');
+  return existsSync(legacy) ? legacy : path.join(os.homedir(), '.gitoff');
+}
+
+export const HOME = dataHome();
+export const DEFAULT_PORT = Number(process.env.GITOFF_PORT || process.env.OGH_PORT || 4777);
+
+/** Where to look for existing clones: ~/code, or the usual alternatives if there's no ~/code. */
+function defaultCodeRoots(): string[] {
+  if (existsSync(expandHome('~/code'))) return ['~/code'];
+  const found = ['~/src', '~/dev', '~/projects', '~/Developer', '~/repos', '~/git', '~/workspace'].filter((d) => existsSync(expandHome(d)));
+  return found.length ? found : ['~/code'];
+}
 
 export const paths = {
   settings: path.join(HOME, 'settings.json'),
@@ -31,7 +47,7 @@ export const paths = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  codeRoots: ['~/code'],
+  codeRoots: defaultCodeRoots(),
   worktreeDir: null,
   editor: 'cursor',
   autoSyncMinutes: 15,
