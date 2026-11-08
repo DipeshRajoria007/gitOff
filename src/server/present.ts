@@ -68,6 +68,7 @@ export async function summarize(t: TrackedPR, snap: PRSnapshot | null, local: Lo
     changedFiles: pr.changedFiles,
     headRefName: pr.headRefName,
     baseRefName: pr.baseRefName,
+    isPrivate: snap.repoInfo.isPrivate,
     reviewDecision: pr.reviewDecision,
     labels: pr.labels,
     commentCount: comments,

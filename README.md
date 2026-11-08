@@ -47,26 +47,25 @@ Press **Sync now** in the app. It downloads every open PR waiting for your revie
 
 Keep `gitoff serve` running so it can send your outbox when the connection comes back. On macOS, `gitoff service install` starts it at login instead (a LaunchAgent; `gitoff service uninstall` removes it, `--dry-run` shows what it would write). On Linux the same command prints a systemd user unit.
 
-## Screenshots
+## A review, start to finish
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="Dashboard: the pull requests saved for offline review, with a Ready to go offline banner"></td>
-    <td width="50%"><img src="docs/screenshots/conversation.png" alt="The Conversation tab of a pull request, rendered like GitHub"></td>
-  </tr>
-  <tr>
-    <td>Everything you need is downloaded before you lose signal.</td>
-    <td>Description, timeline, review threads and checks, as of the last sync.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/outbox.png" alt="The Outbox with a review waiting to be sent while offline"></td>
-    <td><img src="docs/screenshots/sent.png" alt="The same review on github.com after it was sent"></td>
-  </tr>
-  <tr>
-    <td>Offline, your review waits in the outbox.</td>
-    <td>Back online, it's posted to GitHub with each comment on the right line.</td>
-  </tr>
-</table>
+These screenshots are from a real review of [#2](https://github.com/DipeshRajoria007/gitOff/pull/2) in this repository. It was written with gitOff in offline mode and sent by it afterwards.
+
+**Before you lose signal**, the dashboard tells you when everything is saved.
+
+<img src="docs/screenshots/dashboard.png" alt="The gitOff dashboard: two pull requests saved, with a Ready to go offline banner" width="860">
+
+**Offline**, a pull request looks and works the way it does on github.com: description, timeline, commits, checks and the full diff.
+
+<img src="docs/screenshots/conversation.png" alt="The Conversation tab of a pull request in gitOff, with a review queued at the bottom" width="860">
+
+When you submit a review, it waits in the outbox.
+
+<img src="docs/screenshots/outbox.png" alt="The Outbox: a review with 2 comments, queued while offline" width="860">
+
+**Back online**, the outbox sends itself. Here's the same review on github.com, with each comment on its line and the suggestion intact:
+
+<img src="docs/screenshots/sent.png" alt="The review on github.com after gitOff sent it, including a suggested change" width="860">
 
 ## Before you lose connection
 
@@ -77,7 +76,7 @@ Keep `gitoff serve` running so it can send your outbox when the connection comes
    - open PRs linked from those PRs' descriptions (for example the matching backend PR),
    - Jira tickets mentioned in the title, branch, description or commits (needs `gitoff jira login` once).
 2. Check that the dashboard says **Ready to go offline**. It lists anything that failed to download.
-3. To run a PR's code offline, open the PR and use **Prepare to run** (⋯ menu or sidebar). It copies your git-ignored `.env*` files from your main checkout and installs dependencies. On macOS, if the lockfile matches your main checkout, it clones `node_modules` copy-on-write, which takes no extra disk.
+3. To run a PR's code offline, open the PR and use **Prepare to run** (⋯ menu or sidebar). It copies your git-ignored `.env*` files from your main checkout and installs dependencies. If the lockfile matches your main checkout, it copies `node_modules` from there instead of installing, copy-on-write on APFS, btrfs and XFS, so it takes no extra disk.
 
 Auto-sync also runs every 15 minutes while you're online, so the cache is usually fresh anyway.
 

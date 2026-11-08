@@ -11,11 +11,12 @@ import { plural } from '../lib/util';
 
 function describe(x: OutboxItem): string {
   switch (x.type) {
-    case 'review':
+    case 'review': {
       if (x.single) return x.replies.length ? 'Reply' : 'Single comment';
-      return `Review: ${x.event === 'APPROVE' ? 'approve' : x.event === 'REQUEST_CHANGES' ? 'request changes' : 'comment'}${
-        x.threads.length || x.replies.length ? ` with ${plural(x.threads.length, 'comment')}${x.replies.length ? `, ${plural(x.replies.length, 'reply', 'replies')}` : ''}` : ''
-      }`;
+      const what = x.event === 'APPROVE' ? 'Approval' : x.event === 'REQUEST_CHANGES' ? 'Change request' : 'Review';
+      const parts = [x.threads.length ? plural(x.threads.length, 'comment') : '', x.replies.length ? plural(x.replies.length, 'reply', 'replies') : ''].filter(Boolean);
+      return parts.length ? `${what} with ${parts.join(' and ')}` : what;
+    }
     case 'comment':
       return 'Conversation comment';
     case 'resolve':
@@ -53,9 +54,9 @@ function firstLine(body: string): string {
   const line = body
     .replace(/```suggestion[\s\S]*?```/g, '(suggested change)')
     .split('\n')
-    .map((l) => l.trim())
+    .map((l) => l.replace(/^[#>*\-\s]+/, '').trim())
     .find(Boolean);
-  return line ?? '';
+  return (line ?? '').replace(/`/g, '');
 }
 
 function where(t: OutboxReview['threads'][number]): string {
@@ -67,8 +68,8 @@ function Preview({ x }: { x: OutboxItem }) {
   if (x.type === 'comment') return <div className="ob-body markdown-body" dangerouslySetInnerHTML={{ __html: renderMarkdown(x.body) }} />;
   if (x.type !== 'review') return null;
   const lines = [
-    ...x.threads.map((t) => ({ id: t.localId, where: where(t), text: firstLine(t.body) })),
-    ...x.replies.map((r) => ({ id: r.localId, where: r.path ? `reply on ${r.path}` : 'reply', text: firstLine(r.body) })),
+    ...x.threads.map((t) => ({ id: t.localId, reply: false, where: where(t), text: firstLine(t.body) })),
+    ...x.replies.map((r) => ({ id: r.localId, reply: true, where: r.path ?? 'thread', text: firstLine(r.body) })),
   ];
   return (
     <>
@@ -76,8 +77,8 @@ function Preview({ x }: { x: OutboxItem }) {
       {lines.length > 0 && (
         <ul className="ob-comments">
           {lines.map((l) => (
-            <li key={l.id}>
-              {l.where.startsWith('reply') ? <CommentIcon size={12} /> : <FileIcon size={12} />}
+            <li key={l.id} title={l.reply ? 'Reply in a thread on this file' : undefined}>
+              {l.reply ? <CommentIcon size={12} /> : <FileIcon size={12} />}
               <span className="mono where">{l.where}</span>
               <span className="text">{l.text}</span>
             </li>
@@ -98,7 +99,7 @@ function OutboxRow({ x, title, onAct }: { x: OutboxItem; title?: string; onAct: 
         ? true
         : await confirm({
             title: 'Delete from the outbox?',
-            content: `${describe(x)} won't be sent, and its text can't be recovered.${wasHalfSent ? ' The part already on GitHub as a pending review is discarded too.' : ''}`,
+            content: `It won't be sent to GitHub, and its text can't be recovered.${wasHalfSent ? ' The part already on GitHub as a pending review is discarded too.' : ''}`,
             confirmButtonContent: 'Delete',
             confirmButtonType: 'danger',
           });

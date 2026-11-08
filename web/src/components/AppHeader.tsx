@@ -7,6 +7,7 @@ import {
   IssueOpenedIcon,
   LockIcon,
   PlayIcon,
+  RepoIcon,
   ShieldIcon,
   SyncIcon,
   TableIcon,
@@ -44,7 +45,9 @@ export function AppHeader() {
   else if (s?.lastError) syncText = s.lastError;
   else if (s?.lastRunAt) syncText = `Synced ${timeAgo(s.lastRunAt)}`;
 
-  const repoPrs = repo ? (prs ?? []).filter((p) => p.owner.toLowerCase() === repo.owner.toLowerCase() && p.repo.toLowerCase() === repo.repo.toLowerCase()).length : 0;
+  const inRepo = repo ? (prs ?? []).filter((p) => p.owner.toLowerCase() === repo.owner.toLowerCase() && p.repo.toLowerCase() === repo.repo.toLowerCase()) : [];
+  const repoPrs = inRepo.length;
+  const isPrivate = inRepo.some((p) => p.isPrivate);
   const gh = repo ? `https://github.com/${repo.owner}/${repo.repo}` : '';
   const repoFilter = repo ? `/?repo=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}` : '/';
   const themeItem = (m: ThemeMode, label: string) => (
@@ -103,7 +106,7 @@ export function AppHeader() {
               </a>
               <span className="sep">/</span>
               <Link to={repoFilter} className="row" style={{ gap: 6 }}>
-                <LockIcon size={14} />
+                {isPrivate ? <LockIcon size={14} /> : <RepoIcon size={14} />}
                 <b>{repo.repo}</b>
               </Link>
             </>
