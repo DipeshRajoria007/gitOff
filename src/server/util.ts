@@ -136,6 +136,7 @@ export function exec(cmd: string, args: string[], opts: ExecOptions = {}): Promi
 
 /** Open a URL in the default browser. Best effort: does nothing if there is no browser to open. */
 export async function openUrl(url: string): Promise<void> {
+  // On Windows, `start` reads its first quoted argument as the window title, hence the empty ''.
   const [cmd, args]: [string, string[]] =
     process.platform === 'darwin' ? ['open', [url]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : ['xdg-open', [url]];
   await exec(cmd, args, { timeoutMs: 10_000 }).catch(() => {});
