@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-process.env.OGH_HOME = path.join(os.tmpdir(), `ogh-links-${process.pid}`);
+process.env.GITOFF_HOME = path.join(os.tmpdir(), `ogh-links-${process.pid}`);
 
 test('only explicit PR references are followed, never a bare #123', async () => {
   const { explicitPrRefs } = await import('../src/server/sync.ts');

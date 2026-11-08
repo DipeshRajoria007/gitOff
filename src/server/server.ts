@@ -41,12 +41,12 @@ export async function startServer(opts: { port: number; open: boolean }) {
   await new Promise<void>((resolve, reject) => {
     const server = serve({ fetch: app.fetch, port: opts.port, hostname: '127.0.0.1' }, () => resolve());
     server.on('error', (e: any) => {
-      if (e?.code === 'EADDRINUSE') reject(new Error(`Port ${opts.port} is busy. Is offline-github already running? Open http://localhost:${opts.port}`));
+      if (e?.code === 'EADDRINUSE') reject(new Error(`Port ${opts.port} is busy. Is gitOff already running? Open http://localhost:${opts.port}`));
       else reject(e);
     });
   });
   const url = `http://localhost:${opts.port}`;
-  log(`offline-github running at ${url} (data in ${paths.prs.replace(/\/prs$/, '')})`);
+  log(`gitOff running at ${url} (data in ${paths.prs.replace(/\/prs$/, '')})`);
 
   setOnlineProbe(isOnline);
   onAfterSend((keys) => {

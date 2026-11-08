@@ -6,31 +6,32 @@ import { fileURLToPath } from 'node:url';
 import { availableEditors, openInEditor } from './editor.js';
 import { getToken } from './github/client.js';
 import { discoverClones } from './git.js';
-import { getJiraBaseUrl, getJiraCreds, storeJiraToken, testJira } from './jira.js';
+import { KEYCHAIN_SERVICE, getJiraBaseUrl, getJiraCreds, storeJiraToken, testJira } from './jira.js';
 import { DEFAULT_PORT, HOME, getLocal, getMeta, getOutbox, getSettings, getTracked, paths, updateSettings } from './store.js';
 import { exec, parsePrUrl, prKey } from './util.js';
 
-const HELP = `offline-github (ogh): review GitHub PRs offline
+const HELP = `gitoff: review GitHub PRs offline
 
-  ogh serve [--port N] [--no-open]   Start the app (http://localhost:${DEFAULT_PORT}) and the background syncer
-  ogh add <pr-url> [...]             Cache PRs for offline review (also: owner/repo#123)
-  ogh sync [--full]                  Send queued reviews, refresh your review queue and all cached PRs
-  ogh status                         What's cached, what's waiting in the outbox
-  ogh open <pr> [file[:line]]        Open the PR's worktree in Cursor (or VS Code)
-  ogh prepare <pr>                   Copy .env files + install dependencies in the PR's worktree
-  ogh jira login                     Save Jira email + API token (macOS Keychain) to cache tickets
-  ogh doctor                         Check gh auth, git, editor, clones, Jira
-  ogh service install|uninstall      Keep the app running in the background (macOS LaunchAgent)
+  gitoff serve [--port N] [--no-open]   Start the app (http://localhost:${DEFAULT_PORT}) and the background syncer
+  gitoff add <pr-url> [...]             Cache PRs for offline review (also: owner/repo#123)
+  gitoff sync [--full]                  Send queued reviews, refresh your review queue and all cached PRs
+  gitoff status                         What's cached, what's waiting in the outbox
+  gitoff open <pr> [file[:line]]        Open the PR's worktree in Cursor (or VS Code)
+  gitoff prepare <pr>                   Copy .env files + install dependencies in the PR's worktree
+  gitoff jira login                     Save Jira email + API token (macOS Keychain) to cache tickets
+  gitoff doctor                         Check gh auth, git, editor, clones, Jira
+  gitoff service install|uninstall      Keep the app running in the background (macOS LaunchAgent;
+                                        prints a systemd unit on Linux). --dry-run shows what it would do
 
 Data lives in ${HOME}`;
 
-// `ogh status | head` closes the pipe early; that's not an error.
+// `gitoff status | head` closes the pipe early; that's not an error.
 process.stdout.on('error', (e: NodeJS.ErrnoException) => {
   if (e.code === 'EPIPE') process.exit(0);
 });
 
 const args = process.argv.slice(2);
-if (args[0] && parsePrUrl(args[0])) args.unshift('add'); // `ogh <url>` means `ogh add <url>`
+if (args[0] && parsePrUrl(args[0])) args.unshift('add'); // `gitoff <url>` means `gitoff add <url>`
 const cmd = args[0] ?? 'help';
 const flag = (name: string) => args.includes(`--${name}`);
 const opt = (name: string) => {
@@ -105,7 +106,7 @@ async function main() {
 
     case 'add': {
       const urls = args.slice(1).filter((a) => !a.startsWith('--'));
-      if (!urls.length) throw new Error('Usage: ogh add <pr-url> [...]');
+      if (!urls.length) throw new Error('Usage: gitoff add <pr-url> [...]');
       const viaServer = await api<{ keys: string[]; invalid: string[] }>('POST', '/api/prs', { urls: urls.join(' ') });
       if (viaServer) {
         if (viaServer.invalid.length) console.log(`Skipped (not PR links): ${viaServer.invalid.join(', ')}`);
@@ -126,7 +127,7 @@ async function main() {
     case 'sync': {
       const viaServer = await api('POST', '/api/sync', { full: flag('full') });
       if (viaServer) {
-        console.log('Sync started in the app. Watch progress there, or run `ogh status`.');
+        console.log('Sync started in the app. Watch progress there, or run `gitoff status`.');
         return;
       }
       const { syncAll } = await import('./sync.js');
@@ -143,7 +144,7 @@ async function main() {
       const outbox = await getOutbox();
       const meta = await getMeta();
       const running = await api('GET', '/api/status').catch(() => null);
-      console.log(`App: ${running ? `running at ${base.replace('127.0.0.1', 'localhost')}` : 'not running (ogh serve)'}`);
+      console.log(`App: ${running ? `running at ${base.replace('127.0.0.1', 'localhost')}` : 'not running (gitoff serve)'}`);
       console.log(`Last sync: ${ago(meta.lastSyncAt)}   Cached PRs: ${tracked.length}`);
       for (const t of tracked) {
         const l = await getLocal(t.key);
@@ -195,7 +196,7 @@ async function main() {
     }
 
     case 'jira': {
-      if (args[1] !== 'login') throw new Error('Usage: ogh jira login');
+      if (args[1] !== 'login') throw new Error('Usage: gitoff jira login');
       const settings = await getSettings();
       const learned = await getJiraBaseUrl(settings);
       const site = (await ask(`Jira site URL${learned ? ` [${learned}]` : ''}: `)) || learned || '';
@@ -209,7 +210,7 @@ async function main() {
         s.jira.baseUrl = site.replace(/\/+$/, '');
         s.jira.email = email;
       });
-      console.log(`Jira connected as ${name}. Token saved in your macOS Keychain (service "offline-github-jira").`);
+      console.log(`Jira connected as ${name}. Token saved in your macOS Keychain (service "${KEYCHAIN_SERVICE}").`);
       return;
     }
 
@@ -230,21 +231,46 @@ async function main() {
       const clones = await discoverClones(settings.codeRoots);
       console.log(`${ok(Object.keys(clones).length > 0)} ${Object.keys(clones).length} GitHub clones found under ${settings.codeRoots.join(', ')}`);
       const jira = await getJiraCreds(settings);
-      console.log(`${ok(!!jira)} Jira ${jira ? `connected (${jira.baseUrl})` : 'not connected (ogh jira login)'}`);
+      console.log(`${ok(!!jira)} Jira ${jira ? `connected (${jira.baseUrl})` : 'not connected (gitoff jira login)'}`);
       const df = await exec('df', ['-h', HOME.startsWith(os.homedir()) ? os.homedir() : HOME]).catch(() => null);
       const free = df?.stdout.toString().split('\n')[1]?.split(/\s+/)[3];
       console.log(`${ok(true)} free disk: ${free ?? '?'}`);
       const running = await api('GET', '/api/status').catch(() => null);
-      console.log(`${ok(!!running)} app ${running ? `running at ${base.replace('127.0.0.1', 'localhost')}` : 'not running (ogh serve)'}`);
+      console.log(`${ok(!!running)} app ${running ? `running at ${base.replace('127.0.0.1', 'localhost')}` : 'not running (gitoff serve)'}`);
       return;
     }
 
     case 'service': {
-      const label = 'com.offline-github.server';
-      const plist = path.join(os.homedir(), 'Library', 'LaunchAgents', `${label}.plist`);
+      const bin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../bin/gitoff.mjs');
+      const dryRun = flag('dry-run');
+      if (process.platform !== 'darwin') {
+        // No LaunchAgents outside macOS; a systemd user service does the same job.
+        console.log(`The background service is a macOS LaunchAgent. On Linux, a systemd user service does the same.
+Save this as ~/.config/systemd/user/gitoff.service:
+
+[Unit]
+Description=gitOff: review GitHub pull requests offline
+
+[Service]
+ExecStart=${process.execPath} ${bin} serve --no-open --port ${port}
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+
+Then run: systemctl --user enable --now gitoff`);
+        return;
+      }
+      const label = 'io.github.dipeshrajoria007.gitoff';
+      const legacyLabel = 'com.offline-github.server';
+      const agents = path.join(os.homedir(), 'Library', 'LaunchAgents');
+      const plist = path.join(agents, `${label}.plist`);
       const uid = process.getuid?.() ?? 501;
+      const removeLegacy = async () => {
+        await exec('launchctl', ['bootout', `gui/${uid}/${legacyLabel}`]).catch(() => null);
+        await fsp.rm(path.join(agents, `${legacyLabel}.plist`), { force: true });
+      };
       if (args[1] === 'install') {
-        const bin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../bin/ogh.mjs');
         const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -258,19 +284,29 @@ async function main() {
   <key>StandardErrorPath</key><string>${esc(path.join(paths.logs, 'service.err.log'))}</string>
 </dict></plist>
 `;
-        await fsp.mkdir(path.dirname(plist), { recursive: true });
+        if (dryRun) {
+          console.log(`Would write ${plist} and load it with launchctl:\n\n${xml}`);
+          return;
+        }
+        await fsp.mkdir(agents, { recursive: true });
         await fsp.mkdir(paths.logs, { recursive: true });
+        await removeLegacy();
         await exec('launchctl', ['bootout', `gui/${uid}/${label}`]).catch(() => null);
         await fsp.writeFile(plist, xml);
         const r = await exec('launchctl', ['bootstrap', `gui/${uid}`, plist]);
         if (r.code !== 0) throw new Error(`launchctl: ${r.stderr.trim()}`);
-        console.log(`Installed. offline-github now starts at login and stays running: ${base.replace('127.0.0.1', 'localhost')}`);
+        console.log(`Installed. gitOff now starts at login and stays running: ${base.replace('127.0.0.1', 'localhost')}`);
       } else if (args[1] === 'uninstall') {
+        if (dryRun) {
+          console.log(`Would unload and delete ${plist}`);
+          return;
+        }
+        await removeLegacy();
         await exec('launchctl', ['bootout', `gui/${uid}/${label}`]).catch(() => null);
         await fsp.rm(plist, { force: true });
         console.log('Removed the background service.');
       } else {
-        throw new Error('Usage: ogh service install|uninstall');
+        throw new Error('Usage: gitoff service install|uninstall [--dry-run]');
       }
       return;
     }
@@ -288,6 +324,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(`ogh: ${e?.message ?? e}`);
+  console.error(`gitoff: ${e?.message ?? e}`);
   process.exit(1);
 });

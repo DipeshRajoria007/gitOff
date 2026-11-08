@@ -456,7 +456,7 @@ async function syncJira(force: boolean): Promise<string | null> {
     for (const k of s?.linked.jira ?? []) keys.add(k);
   }
   if (!keys.size) return null;
-  if (!creds) return `${keys.size} Jira ticket(s) referenced; run \`ogh jira login\` to cache them`;
+  if (!creds) return `${keys.size} Jira ticket(s) referenced; run \`gitoff jira login\` to cache them`;
   let failed = 0;
   await pool([...keys], 3, async (k) => {
     const cached = await getJira(k);

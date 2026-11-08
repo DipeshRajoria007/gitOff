@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const api = `http://127.0.0.1:${process.env.OGH_PORT || 4777}`;
+const api = `http://127.0.0.1:${process.env.GITOFF_PORT || process.env.OGH_PORT || 4777}`;
 
 export default defineConfig({
   root,

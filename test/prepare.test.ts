@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ogh-prep-'));
-process.env.OGH_HOME = path.join(dir, 'home');
+process.env.GITOFF_HOME = path.join(dir, 'home');
 after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
 const clone = path.join(dir, 'app');

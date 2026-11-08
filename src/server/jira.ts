@@ -3,7 +3,9 @@ import { downloadMedia, localizeHtml, type MediaRef } from './media.js';
 import { getMeta, saveJira, updateMeta } from './store.js';
 import { exec, now } from './util.js';
 
-const KEYCHAIN_SERVICE = 'offline-github-jira';
+export const KEYCHAIN_SERVICE = 'gitoff-jira';
+/** Keychain service used before the rename; tokens saved there keep working. */
+const LEGACY_KEYCHAIN_SERVICE = 'offline-github-jira';
 
 export interface JiraCreds {
   baseUrl: string;
@@ -19,12 +21,16 @@ export async function getJiraBaseUrl(settings: Settings): Promise<string | null>
 
 async function keychainToken(email: string): Promise<string | null> {
   if (process.platform !== 'darwin') return null;
-  const r = await exec('security', ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', email, '-w'], { timeoutMs: 5000 }).catch(() => null);
-  return r?.code === 0 ? r.stdout.toString().trim() || null : null;
+  for (const service of [KEYCHAIN_SERVICE, LEGACY_KEYCHAIN_SERVICE]) {
+    const r = await exec('security', ['find-generic-password', '-s', service, '-a', email, '-w'], { timeoutMs: 5000 }).catch(() => null);
+    const token = r?.code === 0 ? r.stdout.toString().trim() : '';
+    if (token) return token;
+  }
+  return null;
 }
 
 export async function storeJiraToken(email: string, token: string): Promise<void> {
-  if (process.platform !== 'darwin') throw new Error('Keychain storage needs macOS; set JIRA_API_TOKEN instead.');
+  if (process.platform !== 'darwin') throw new Error('Saving the token needs the macOS Keychain. On other systems, start gitOff with the JIRA_API_TOKEN environment variable set instead.');
   const r = await exec('security', ['add-generic-password', '-U', '-s', KEYCHAIN_SERVICE, '-a', email, '-w', token], { timeoutMs: 10_000 });
   if (r.code !== 0) throw new Error(`Could not save the token to Keychain: ${r.stderr.trim()}`);
 }
@@ -86,11 +92,11 @@ export async function fetchJiraIssue(creds: JiraCreds, key: string, media: Setti
   const fields = 'summary,status,issuetype,priority,assignee,reporter,created,updated,labels,parent,subtasks,issuelinks,comment,description';
   const url = `${creds.baseUrl}/rest/api/3/issue/${encodeURIComponent(key)}?expand=renderedFields&fields=${fields}`;
   const res = await fetch(url, {
-    headers: { Authorization: auth, Accept: 'application/json', 'User-Agent': 'offline-github' },
+    headers: { Authorization: auth, Accept: 'application/json', 'User-Agent': 'gitoff' },
     signal: AbortSignal.timeout(30_000),
   });
   if (res.status === 404) throw new Error(`${key} not found in Jira (or no access)`);
-  if (res.status === 401 || res.status === 403) throw new Error(`Jira rejected the credentials (${res.status}); run \`ogh jira login\` again`);
+  if (res.status === 401 || res.status === 403) throw new Error(`Jira rejected the credentials (${res.status}); run \`gitoff jira login\` again`);
   if (!res.ok) throw new Error(`Jira HTTP ${res.status}`);
   const j: any = await res.json();
   const f = j.fields ?? {};

@@ -1,94 +1,161 @@
-# offline-github
+<p align="center"><img src="docs/logo.svg" width="96" height="96" alt="gitOff logo: a cat whose face is a git branch"></p>
 
-Review GitHub pull requests with no internet. While you're online it caches each PR: description, conversation, review threads, commits, checks, diffs, screenshots and screen recordings, linked PRs and Jira tickets. It also checks the branch out as a git worktree you can open in Cursor. Offline you review in a GitHub-style UI. Comments, suggestions, approvals, "viewed" marks and resolved threads wait in an outbox and go to GitHub on their own when you're back online.
+<h1 align="center">gitOff</h1>
 
-## Setup (once)
+<p align="center">
+  <b>Review GitHub pull requests with no internet.</b><br>
+  Cache your PRs before the flight, review them in a GitHub-style UI on the plane,<br>and your comments post themselves when you land.
+</p>
+
+<p align="center">
+  <a href="https://github.com/DipeshRajoria007/gitOff/actions/workflows/ci.yml"><img src="https://github.com/DipeshRajoria007/gitOff/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="macOS and Linux">
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/files-dark.png">
+    <img src="docs/screenshots/files.png" alt="Reviewing a pull request offline in gitOff: the Files changed tab with an inline comment waiting to be sent" width="960">
+  </picture>
+</p>
+
+gitOff is a small app that runs on your machine. While you're online it downloads everything a review needs: the description, conversation, review threads, commits, checks, diffs, images and screen recordings, linked PRs and Jira tickets. It also checks the branch out as a git worktree. Offline, you review the way you do on github.com. Comments, suggestions, approvals, resolved threads and "viewed" ticks wait in an outbox and go to GitHub by themselves once you're back online.
+
+## Features
+
+- **The whole pull request, offline.** Conversation, review threads, commits, checks, full diffs with expandable context, images, screen recordings, linked PRs and Jira tickets.
+- **A UI you already know.** Files changed with split and unified diffs, a file tree, "Viewed" ticks, suggestions, pending reviews and keyboard shortcuts, built with GitHub's own Primer components. Light and dark themes.
+- **An outbox you can trust on bad networks.** Reviews are posted against the commit you actually reviewed. Approvals are held if new commits landed while you were offline. Nothing is posted twice and nothing is dropped.
+- **The code, too.** Each PR you review gets a git worktree next to your clone. Open it in Cursor or VS Code. **Prepare to run** copies your `.env` files and installs dependencies so you can run the branch on the plane.
+- **Local and private.** It listens on 127.0.0.1 only, borrows the login of your GitHub CLI, stores no tokens and has no telemetry.
+
+## Quick start
+
+You need Node 20.19 or newer, git, and the [GitHub CLI](https://cli.github.com) logged in (`gh auth login`). Works on macOS and Linux.
 
 ```bash
-cd ~/code/offline-github
+git clone https://github.com/DipeshRajoria007/gitOff.git
+cd gitOff
 npm install
-npm run build        # builds the web UI into web/dist
-npm link             # puts the `ogh` command on your PATH (undo: npm unlink -g offline-github)
-gh auth status       # uses your gh CLI login; no tokens are stored by this tool
-ogh serve            # starts the app at http://localhost:4777 and opens it
+npm run build        # builds the web UI
+npm link             # adds the `gitoff` command (undo: npm unlink -g gitoff)
+gitoff serve         # starts the app at http://localhost:4777 and opens it
 ```
 
-Keep `ogh serve` running in a terminal tab. Or run `ogh service install` to start it at login and keep it running in the background (macOS LaunchAgent; `ogh service uninstall` removes it). It has to be running to send your outbox when the connection comes back.
+Press **Sync now** in the app. It downloads every open PR waiting for your review and your own PRs from the last week. Paste any other PR link into **Add pull requests**.
+
+Keep `gitoff serve` running so it can send your outbox when the connection comes back. On macOS, `gitoff service install` starts it at login instead (a LaunchAgent; `gitoff service uninstall` removes it, `--dry-run` shows what it would write). On Linux the same command prints a systemd user unit.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="Dashboard: the pull requests saved for offline review, with a Ready to go offline banner"></td>
+    <td width="50%"><img src="docs/screenshots/conversation.png" alt="The Conversation tab of a pull request, rendered like GitHub"></td>
+  </tr>
+  <tr>
+    <td>Everything you need is downloaded before you lose signal.</td>
+    <td>Description, timeline, review threads and checks, as of the last sync.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/outbox.png" alt="The Outbox with a review waiting to be sent while offline"></td>
+    <td><img src="docs/screenshots/sent.png" alt="The same review on github.com after it was sent"></td>
+  </tr>
+  <tr>
+    <td>Offline, your review waits in the outbox.</td>
+    <td>Back online, it's posted to GitHub with each comment on the right line.</td>
+  </tr>
+</table>
 
 ## Before you lose connection
 
 1. Open http://localhost:4777 and press **Sync now**. That pulls:
    - every open PR where your review is requested,
    - your own PRs updated in the last 7 days (change this in Settings),
-   - anything you pasted into "Add pull requests",
-   - PRs linked from those PRs' descriptions (e.g. the matching backend PR),
-   - Jira tickets mentioned in the title, branch, description or commits (needs `ogh jira login` once).
-2. Check the **Ready to go offline** box on the dashboard. It lists anything that failed to download.
-3. If you want to run a PR's code offline, open the PR and use **Prepare to run** (⋯ menu or sidebar). This copies your git-ignored `.env*` files from your main checkout and installs dependencies. If the lockfile matches your main checkout, it clones `node_modules` copy-on-write, which takes no extra disk.
+   - anything you pasted into **Add pull requests**,
+   - open PRs linked from those PRs' descriptions (for example the matching backend PR),
+   - Jira tickets mentioned in the title, branch, description or commits (needs `gitoff jira login` once).
+2. Check that the dashboard says **Ready to go offline**. It lists anything that failed to download.
+3. To run a PR's code offline, open the PR and use **Prepare to run** (⋯ menu or sidebar). It copies your git-ignored `.env*` files from your main checkout and installs dependencies. On macOS, if the lockfile matches your main checkout, it clones `node_modules` copy-on-write, which takes no extra disk.
 
 Auto-sync also runs every 15 minutes while you're online, so the cache is usually fresh anyway.
 
 ## Reviewing offline
 
-- **Files changed** works like GitHub: split/unified, hide whitespace, file tree, "N unmodified lines" expanders, per-commit and "changes since your last review" views. Diffs are computed locally with git, so expanding context works offline too.
-- Hover a line and click **+** to comment. Drag to select several lines. **± Suggest change** inserts a suggestion block. **Start a review / Add review comment** builds a pending review; **Add single comment** sends just that comment.
-- Reply to threads, resolve or unresolve them, tick **Viewed** (`v`), and move between files with `j`/`k`.
-- **Review changes** submits: Comment, Approve or Request changes. Offline, it goes to the **Outbox**.
+- **Files changed** works like GitHub: split or unified, hide whitespace, file tree, "N unmodified lines" expanders, per-commit and "changes since your last review" views. Diffs are computed locally with git, so expanding context works offline too.
+- Hover a line and click **+** to comment. Drag to select several lines. **Suggest change** inserts a suggestion block. **Start a review** builds a pending review; **Add single comment** sends just that comment.
+- Reply to threads, resolve or unresolve them, tick **Viewed** (`v`), and move between files with `j` and `k`.
+- **Review changes** submits a comment, an approval or a change request. Offline, it goes to the **Outbox**.
 - **Open in Cursor** opens the PR's worktree (`~/code/<repo>-review-<number>`, next to your clone). The file icon in a file's header opens that file at the changed line.
 
 ## What happens when you're back online
 
-The app checks for a connection every 15 seconds while offline. When it can reach GitHub it sends the outbox first, then refreshes PRs.
+The app checks for a connection every 15 seconds while offline. When it can reach GitHub it sends the outbox first, then refreshes your PRs.
 
-- A review is created against the commit you actually reviewed, so your line comments land on the right lines even if new commits were pushed meanwhile (GitHub marks them outdated if the lines changed).
-- An **Approve is held** if new commits landed after you reviewed. The outbox asks you to approve anyway, send it as a comment, or put it back into a draft. The same happens if the commit you reviewed was force-pushed away.
+- A review is created against the commit you actually reviewed, so your line comments land on the right lines even if new commits were pushed meanwhile. GitHub marks them outdated if those lines changed.
+- **An approval is held** if new commits landed after you reviewed. The outbox asks you to approve anyway, send it as a comment, or put it back into a draft. The same happens if the commit you reviewed was force-pushed away.
 - If GitHub can't place a comment on a line (outside the diff, or the file changed), it's posted as a file comment that quotes the code. If even that fails, it goes into the review summary. Nothing is dropped.
-- Sending is safe on bad networks. Every comment carries an invisible marker (`<!-- ogh:… -->`), so if a response gets lost the next attempt can see what already reached GitHub and doesn't post it twice. Rate limits and GitHub errors are retried later; only a real "this line isn't in the diff" turns a line comment into a file comment.
+- Sending is safe on bad networks. Every comment carries an invisible marker (`<!-- ogh:… -->`), so if a response gets lost, the next attempt sees what already reached GitHub and doesn't post it twice. Rate limits and server errors are retried later.
 - Reviews for the same PR go out one at a time, in order. A later review waits while an earlier one is held for your OK.
 - If you had started a review on github.com, your offline comments are added to that pending review. Single comments never touch it.
 - A "viewed" tick isn't sent for a file that changed after you looked at it.
-- Deleting a half-sent review from the outbox (or sending it back to draft) also discards its pending copy on GitHub, which needs a connection.
+
+Want to try it without turning off Wi-Fi? `GITOFF_OFFLINE=1 gitoff serve` never contacts GitHub, so everything you submit stays in the outbox until you restart it normally.
+
+## Privacy and security
+
+- The server listens on 127.0.0.1 and only answers requests addressed to localhost. Requests that change anything need a custom header, so other websites you visit can't drive it.
+- It asks the GitHub CLI for a token (`gh auth token`) when it needs one and never writes it to disk. Git fetches use the same login over HTTPS.
+- It only talks to GitHub, to the hosts of images and videos in the PRs you cache, and to your Jira site if you connect one. There is no analytics or telemetry.
+- PR content is sanitized before it's shown. Files and media that come from a PR are served under a sandboxing Content-Security-Policy, and the app itself runs under a strict one.
 
 ## Jira
 
-`ogh jira login` (or Settings → Jira) asks for your Atlassian email and an API token from https://id.atlassian.com/manage-profile/security/api-tokens. The token goes into the macOS Keychain (service `offline-github-jira`), not a file. Tickets are found from links to `*.atlassian.net/browse/KEY-123` and from bare keys like `PROJ-123` in the PR title, branch and commits.
+`gitoff jira login` (or Settings → Jira) asks for your Atlassian email and an [API token](https://id.atlassian.com/manage-profile/security/api-tokens). On macOS the token goes into the Keychain (service `gitoff-jira`), not a file. On Linux, set `JIRA_API_TOKEN` (and optionally `JIRA_EMAIL`) in the environment that runs `gitoff serve`. Tickets are found from links to `*.atlassian.net/browse/KEY-123`. Bare keys like `PROJ-123` in the PR title, branch or commits count too, once gitOff has seen a link to that Jira project.
 
 ## Commands
 
 | command | |
 |---|---|
-| `ogh serve [--port N] [--no-open]` | run the app and background sync |
-| `ogh add <url>…` | cache PRs (also `owner/repo#123`) |
-| `ogh sync [--full]` | send the outbox, refresh queue and PRs (`--full` re-downloads everything) |
-| `ogh status` | what's cached, drafts, outbox |
-| `ogh open <pr> [file[:line]]` | open the worktree in Cursor |
-| `ogh prepare <pr>` | copy `.env` files and install dependencies in the worktree |
-| `ogh jira login` | connect Jira |
-| `ogh doctor` | check gh auth, git, editor, clones, Jira |
-| `ogh service install\|uninstall` | background service at login |
+| `gitoff serve [--port N] [--no-open]` | run the app and background sync |
+| `gitoff add <url>…` | cache PRs (also `owner/repo#123`) |
+| `gitoff sync [--full]` | send the outbox, refresh the queue and PRs (`--full` re-downloads everything) |
+| `gitoff status` | what's cached, drafts, outbox |
+| `gitoff open <pr> [file[:line]]` | open the worktree in Cursor or VS Code |
+| `gitoff prepare <pr>` | copy `.env` files and install dependencies in the worktree |
+| `gitoff jira login` | connect Jira |
+| `gitoff doctor` | check gh auth, git, editor, clones, Jira |
+| `gitoff service install\|uninstall [--dry-run]` | start at login (macOS), or print a systemd unit (Linux) |
 
-Rehearse offline without turning off Wi-Fi: `OGH_OFFLINE=1 ogh serve`. The app then never contacts GitHub, and everything you submit stays in the outbox.
+`ogh`, the project's original name, still works as an alias for `gitoff`.
 
 ## Where things live
 
-- `~/.offline-github/`: snapshots (`prs/`), media (`assets/`), outbox, settings, logs. Delete it to start over.
-- PR refs are fetched into your existing clones under `refs/ogh/pr/<n>/*`. Your branches and `origin/*` aren't touched. Fetches use your `gh` login over HTTPS, so they don't depend on SSH keys.
-- PRs you review get a worktree automatically. Your own PRs get one only when you click **Create worktree** (dashboard or PR page; works offline).
-- Worktrees are created next to the matching clone, detached at the PR head. A worktree is moved to a new head only when it has no uncommitted changes and no commits of yours. Your own PR uses your existing checkout of that branch if there is one.
-- Cleanup: a PR that is closed, or no longer in your queue, with no activity for a week and nothing unsent, is removed with its worktree (only if the worktree is clean). Media and tickets no PR refers to any more are deleted with it.
-- Repos without a clone under `~/code` get a bare clone in `~/.offline-github/clones/`.
+- `~/.gitoff/`: snapshots, media, the outbox, settings and logs. Delete it to start over. Set `GITOFF_HOME` to put it somewhere else. (Installs from before the rename keep using `~/.offline-github`.)
+- PR refs are fetched into your existing clones under `refs/ogh/pr/<n>/*`. Your branches and `origin/*` aren't touched.
+- Clones are found under `~/code` (or `~/src`, `~/dev`, `~/projects` and similar if there's no `~/code`; change it in Settings). Repos without a local clone get a bare clone inside the data folder.
+- Worktrees are created next to the matching clone, detached at the PR head. A worktree is only moved to a new head when it has no uncommitted changes and no commits of yours. Your own PRs get a worktree only when you ask for one.
+- Cleanup: a PR that's closed or no longer in your queue, with no activity for a week and nothing unsent, is removed along with its worktree (only if the worktree is clean).
 
 ## How it's built
 
-- `src/server`: Node + TypeScript (run through `tsx`), Hono HTTP server on 127.0.0.1. It only answers requests for localhost, and writes need an `x-ogh` header, so other websites can't drive it. GitHub GraphQL for snapshots and reviews, REST for single comments.
-- `web`: React + Vite, GitHub's Primer components and tokens, `@pierre/diffs` (Shiki highlighting) for diffs. Everything is bundled locally, so the UI works with no network.
-- Tests: `npm test` covers the outbox (against a fake GitHub API: ordering, holds, fallbacks, lost responses, no double posts), diff parsing (renames, quoted and unicode paths, binary and generated files) and worktree safety.
+- `src/server`: Node and TypeScript (run through `tsx`, no build step), a [Hono](https://hono.dev) HTTP server, GitHub GraphQL for snapshots and reviews, REST for single comments. State is plain JSON files.
+- `web`: React, Vite, GitHub's [Primer](https://primer.style) components and design tokens, and [`@pierre/diffs`](https://www.npmjs.com/package/@pierre/diffs) for syntax-highlighted diffs. Everything is bundled locally, so the UI needs no network.
+- `npm test` covers the outbox against a fake GitHub API (ordering, holds, fallbacks, lost responses, no double posts), diff parsing (renames, quoted and unicode paths, binary and generated files) and worktree safety.
 
 ## Known limits
 
 - Reactions, editing or deleting comments already on GitHub, and merging aren't supported offline.
 - CI logs aren't downloaded. The Checks tab shows each check's status as of the last sync.
-- Line comments are only allowed on the "All changes" view, and on new-side lines in "since last review". Other views map to different line numbers on GitHub.
-- Very large or generated files (lockfiles, `linguist-generated`) are collapsed until you click **Load diff**, like on GitHub.
-- "Move to latest version" moves comments on new-side lines. Comments on removed (old-side) lines keep their line numbers, which can be off if the base branch moved (e.g. after "Update branch").
-- PR-supplied files (raw files, downloaded media) are served with a sandboxing Content-Security-Policy, and the app has its own strict CSP.
+- Line comments can be added on the "All changes" view, and on new-side lines in "Changes since your last review". Other views use line numbers GitHub can't map.
+- Very large and generated files (lockfiles, `linguist-generated`) stay collapsed until you click **Load diff**, as on GitHub.
+- Windows isn't tested. WSL should behave like Linux.
+
+## Contributing
+
+Issues and pull requests are welcome. `npm test` runs the tests and `npm run typecheck` checks types. For UI work, run `npm run dev:server` and `npm run dev:web` side by side and open http://localhost:5173.
+
+## License
+
+[MIT](LICENSE). gitOff is an independent project and isn't affiliated with or endorsed by GitHub.
