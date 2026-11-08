@@ -127,8 +127,11 @@ async function startPrepareClaimed(key: PRKey): Promise<void> {
               ([a, b]) => !!a && a.equals(b),
             );
             if (same || pm !== 'npm') {
+              // Copy-on-write: APFS clones on macOS, reflinks on Linux (btrfs, XFS). Where the
+              // filesystem can't do it, cp fails and we install instead of making a full copy.
+              const cow = process.platform === 'darwin' ? ['-cR'] : ['-R', '--reflink=always'];
               log('cloning node_modules from your main checkout (copy-on-write, uses no extra disk)…');
-              const code = await runLogged('cp', ['-cR', srcNM, dstNM], wt, logFile);
+              const code = await runLogged('cp', [...cow, srcNM, dstNM], wt, logFile);
               if (code === 0 && same) {
                 installed = true;
                 summary.push('reused node_modules (lockfile unchanged)');
