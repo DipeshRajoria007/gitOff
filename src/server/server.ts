@@ -6,7 +6,7 @@ import { onAfterSend, processOutbox, resetBackoff, setOnlineProbe } from './outb
 import { fixStalePrepare } from './prepare.js';
 import { getMeta, getOutbox, getSettings, getTracked, paths } from './store.js';
 import { syncAll, syncPr } from './sync.js';
-import { appendLine, exec } from './util.js';
+import { appendLine, openUrl } from './util.js';
 
 export function log(msg: string) {
   const line = `[${new Date().toISOString()}] ${msg}`;
@@ -65,6 +65,6 @@ export async function startServer(opts: { port: number; open: boolean }) {
   setInterval(() => void tick().catch((e) => log(`tick error: ${e?.message ?? e}`)), 60_000).unref?.();
   void checkNow();
 
-  if (opts.open) await exec('open', [url]).catch(() => {});
+  if (opts.open) await openUrl(url);
   return url;
 }
