@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ogh-http-'));
-process.env.OGH_HOME = path.join(dir, 'home');
+process.env.GITOFF_HOME = path.join(dir, 'home');
 process.env.GITHUB_TOKEN = 'test-token';
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (u: any) => {

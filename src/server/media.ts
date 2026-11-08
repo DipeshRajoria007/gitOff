@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { forcedOffline } from './github/client.js';
 import { paths } from './store.js';
 import { KeyedMutex, now, pool, readJson, sha1, writeJson } from './util.js';
 
@@ -107,10 +108,10 @@ async function downloadOne(ref: MediaRef, maxBytes: number): Promise<{ ok: true 
   return mutex.run(key, async () => {
     if ((await loadIndex())[key]) return { ok: true } as const;
     let res: Response;
-    if (process.env.OGH_OFFLINE === '1') return { ok: false, reason: 'offline' } as const;
+    if (forcedOffline()) return { ok: false, reason: 'offline' } as const;
     try {
       res = await fetch(ref.url, {
-        headers: { 'User-Agent': 'offline-github', ...(ref.headers ?? {}) },
+        headers: { 'User-Agent': 'gitoff', ...(ref.headers ?? {}) },
         redirect: 'follow',
         signal: AbortSignal.timeout(ref.kind === 'video' ? 20 * 60_000 : 60_000),
       });

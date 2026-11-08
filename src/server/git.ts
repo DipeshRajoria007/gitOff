@@ -1,6 +1,7 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import type { DiffFileEntry, DiffResponse, Settings, WorktreeInfo } from '../shared/types.js';
+import { forcedOffline } from './github/client.js';
 import { HOME, paths } from './store.js';
 import { exec, exists, expandHome, now, readJson, writeJson, type ExecOptions } from './util.js';
 
@@ -168,7 +169,7 @@ export async function fetchPrRefs(opts: {
   const headRef = prRef(number, 'head');
   const baseRef = prRef(number, 'base');
 
-  if (process.env.OGH_OFFLINE === '1') throw new GitError('Offline (OGH_OFFLINE=1): not fetching');
+  if (forcedOffline()) throw new GitError('Offline (GITOFF_OFFLINE=1): not fetching');
   const run = (refspecs: string[]) =>
     git(clonePath, [...credentialArgs(), 'fetch', '--no-tags', '--no-write-fetch-head', '--quiet', url, ...refspecs], {
       timeoutMs: 20 * 60_000,

@@ -586,7 +586,7 @@ export function buildApp() {
     const direct = path.join(WEB_DIST, p);
     if (!p.includes('..') && p !== '/' && (await exists(direct)) && !(await fsp.stat(direct)).isDirectory()) return sendFile(c, direct, 'none');
     if (!(await exists(path.join(WEB_DIST, 'index.html')))) {
-      return c.html('<h1>UI not built</h1><p>Run <code>npm run build</code> in the offline-github folder, then reload.</p>');
+      return c.html('<h1>UI not built</h1><p>Run <code>npm run build</code> in the gitoff folder, then reload.</p>');
     }
     return sendFile(c, path.join(WEB_DIST, 'index.html'), 'none');
   });

@@ -6,8 +6,9 @@ import path from 'node:path';
 import { after, before, beforeEach, test } from 'node:test';
 
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'ogh-test-'));
-process.env.OGH_HOME = home;
+process.env.GITOFF_HOME = home;
 process.env.GITHUB_TOKEN = 'test-token';
+delete process.env.GITOFF_OFFLINE;
 delete process.env.OGH_OFFLINE;
 
 /** How a call fails: the connection drops before/after GitHub did the work, or GitHub answers with an error. */

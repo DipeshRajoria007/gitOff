@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ogh-git-'));
-process.env.OGH_HOME = path.join(dir, 'home');
+process.env.GITOFF_HOME = path.join(dir, 'home');
 const repo = path.join(dir, 'repo');
 fs.mkdirSync(repo);
 const g = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } }).trim();

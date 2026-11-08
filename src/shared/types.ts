@@ -413,6 +413,7 @@ export interface PRSummary {
   changedFiles?: number;
   headRefName?: string;
   baseRefName?: string;
+  isPrivate?: boolean;
   reviewDecision?: string | null;
   labels?: Label[];
   commentCount?: number;

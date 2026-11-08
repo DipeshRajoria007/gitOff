@@ -1,5 +1,4 @@
 import {
-  CloudOfflineIcon,
   CodeIcon,
   GearIcon,
   GitPullRequestIcon,
@@ -8,6 +7,7 @@ import {
   IssueOpenedIcon,
   LockIcon,
   PlayIcon,
+  RepoIcon,
   ShieldIcon,
   SyncIcon,
   TableIcon,
@@ -45,7 +45,9 @@ export function AppHeader() {
   else if (s?.lastError) syncText = s.lastError;
   else if (s?.lastRunAt) syncText = `Synced ${timeAgo(s.lastRunAt)}`;
 
-  const repoPrs = repo ? (prs ?? []).filter((p) => p.owner.toLowerCase() === repo.owner.toLowerCase() && p.repo.toLowerCase() === repo.repo.toLowerCase()).length : 0;
+  const inRepo = repo ? (prs ?? []).filter((p) => p.owner.toLowerCase() === repo.owner.toLowerCase() && p.repo.toLowerCase() === repo.repo.toLowerCase()) : [];
+  const repoPrs = inRepo.length;
+  const isPrivate = inRepo.some((p) => p.isPrivate);
   const gh = repo ? `https://github.com/${repo.owner}/${repo.repo}` : '';
   const repoFilter = repo ? `/?repo=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}` : '/';
   const themeItem = (m: ThemeMode, label: string) => (
@@ -93,8 +95,8 @@ export function AppHeader() {
             </ActionList>
           </ActionMenu.Overlay>
         </ActionMenu>
-        <Link to="/" className="gh-mark" title="Offline PRs" aria-label="Offline PRs home">
-          <CloudOfflineIcon size={28} />
+        <Link to="/" className="gh-mark" title="gitOff" aria-label="gitOff home">
+          <img src="/favicon.svg" width={28} height={28} alt="" style={{ display: 'block' }} />
         </Link>
         <nav className="gh-crumbs" aria-label="Breadcrumb">
           {repo ? (
@@ -104,13 +106,13 @@ export function AppHeader() {
               </a>
               <span className="sep">/</span>
               <Link to={repoFilter} className="row" style={{ gap: 6 }}>
-                <LockIcon size={14} />
+                {isPrivate ? <LockIcon size={14} /> : <RepoIcon size={14} />}
                 <b>{repo.repo}</b>
               </Link>
             </>
           ) : (
             <Link to="/">
-              <b>Offline PRs</b>
+              <b>gitOff</b>
             </Link>
           )}
         </nav>

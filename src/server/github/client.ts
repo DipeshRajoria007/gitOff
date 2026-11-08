@@ -68,14 +68,14 @@ function rateLimited(res: Response, body: string): boolean {
   );
 }
 
-/** OGH_OFFLINE=1 simulates having no connection (for rehearsing or testing). */
-export const forcedOffline = () => process.env.OGH_OFFLINE === '1';
+/** GITOFF_OFFLINE=1 simulates having no connection (for rehearsing or testing). OGH_OFFLINE is the old name. */
+export const forcedOffline = () => process.env.GITOFF_OFFLINE === '1' || process.env.OGH_OFFLINE === '1';
 
 async function rawFetch(url: string, init: RequestInit & { timeoutMs?: number }): Promise<Response> {
   const { timeoutMs = 30_000, ...rest } = init;
   if (forcedOffline()) {
     reportNetworkFailure();
-    throw new NetworkError(`Offline (OGH_OFFLINE=1): not contacting ${new URL(url).host}`);
+    throw new NetworkError(`Offline (GITOFF_OFFLINE=1): not contacting ${new URL(url).host}`);
   }
   try {
     const res = await fetch(url, { ...rest, signal: AbortSignal.timeout(timeoutMs) });
@@ -91,7 +91,7 @@ async function rawFetch(url: string, init: RequestInit & { timeoutMs?: number })
 async function authHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
   return {
     Authorization: `bearer ${await getToken()}`,
-    'User-Agent': 'offline-github',
+    'User-Agent': 'gitoff',
     'X-GitHub-Api-Version': '2022-11-28',
     ...extra,
   };

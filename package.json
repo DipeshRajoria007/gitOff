@@ -1,11 +1,31 @@
 {
-  "name": "offline-github",
+  "name": "gitoff",
   "version": "0.1.0",
   "description": "Review GitHub pull requests offline: cache PRs, review in a GitHub-like UI, open branches in Cursor, sync reviews back when online.",
+  "keywords": [
+    "github",
+    "code-review",
+    "pull-requests",
+    "offline",
+    "offline-first",
+    "local-first",
+    "cli",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/DipeshRajoria007/gitOff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DipeshRajoria007/gitOff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DipeshRajoria007/gitOff/issues"
+  },
+  "author": "Dipesh Rajoria",
   "private": true,
   "license": "MIT",
   "type": "module",
   "bin": {
+    "gitoff": "bin/gitoff.mjs",
     "ogh": "bin/ogh.mjs"
   },
   "engines": {
@@ -14,7 +34,7 @@
   "scripts": {
     "build": "vite build --config web/vite.config.ts",
     "dev:web": "vite --config web/vite.config.ts",
-    "dev:server": "node bin/ogh.mjs serve --no-open",
+    "dev:server": "node bin/gitoff.mjs serve --no-open",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p web/tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts"
   },

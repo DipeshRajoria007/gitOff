@@ -6,7 +6,7 @@ import { onAfterSend, processOutbox, resetBackoff, setOnlineProbe } from './outb
 import { fixStalePrepare } from './prepare.js';
 import { getMeta, getOutbox, getSettings, getTracked, paths } from './store.js';
 import { syncAll, syncPr } from './sync.js';
-import { appendLine, exec } from './util.js';
+import { appendLine, openUrl } from './util.js';
 
 export function log(msg: string) {
   const line = `[${new Date().toISOString()}] ${msg}`;
@@ -41,12 +41,12 @@ export async function startServer(opts: { port: number; open: boolean }) {
   await new Promise<void>((resolve, reject) => {
     const server = serve({ fetch: app.fetch, port: opts.port, hostname: '127.0.0.1' }, () => resolve());
     server.on('error', (e: any) => {
-      if (e?.code === 'EADDRINUSE') reject(new Error(`Port ${opts.port} is busy. Is offline-github already running? Open http://localhost:${opts.port}`));
+      if (e?.code === 'EADDRINUSE') reject(new Error(`Port ${opts.port} is busy. Is gitOff already running? Open http://localhost:${opts.port}`));
       else reject(e);
     });
   });
   const url = `http://localhost:${opts.port}`;
-  log(`offline-github running at ${url} (data in ${paths.prs.replace(/\/prs$/, '')})`);
+  log(`gitOff running at ${url} (data in ${paths.prs.replace(/\/prs$/, '')})`);
 
   setOnlineProbe(isOnline);
   onAfterSend((keys) => {
@@ -65,6 +65,6 @@ export async function startServer(opts: { port: number; open: boolean }) {
   setInterval(() => void tick().catch((e) => log(`tick error: ${e?.message ?? e}`)), 60_000).unref?.();
   void checkNow();
 
-  if (opts.open) await exec('open', [url]).catch(() => {});
+  if (opts.open) await openUrl(url);
   return url;
 }
